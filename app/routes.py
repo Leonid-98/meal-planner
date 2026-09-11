@@ -97,7 +97,7 @@ def _fill_context(dates, slots):
         key_date, key_slot = args["reroll"].split("|")
         proposals = services.reroll(services.decode_proposals(raw), dates,
                                     (date.fromisoformat(key_date), key_slot),
-                                    repeat_days, weekday_tag, two_days, seed)
+                                    repeat_days, weekday_tag, two_days, seed, only_empty)
     elif raw and not args.get("regen"):
         proposals = services.decode_proposals(raw)
     else:
@@ -110,6 +110,7 @@ def _fill_context(dates, slots):
         "proposals": proposals, "by_key": by_key, "rows": rows,
         "encoded": [services.encode_proposal(p) for p in proposals],
         "new_count": sum(1 for p in proposals if p["leftover_of"] is None),
+        "replaced": sum(len(services.entries_for(dates).get((p["date"], p["slot"]), [])) for p in proposals),
         "params": {k: v for k, v in args.items(multi=True) if k not in ("p", "reroll", "seed", "regen", "dlg")},
     }
 
@@ -232,7 +233,8 @@ def fill_accept():
     proposals = services.decode_proposals(request.form.getlist("p"))
     if proposals:
         guests = max(services.parse_tenths(services.get_setting("default_guests")) or 0, 0)
-        services.accept_proposals(proposals, services.default_eaters(), guests)
+        services.accept_proposals(proposals, services.default_eaters(), guests,
+                                  replace=request.form.get("replace") == "1")
         db.session.commit()
         return _back(_week_url(proposals[0]["date"]))
     return _back(_week_url(g.today))

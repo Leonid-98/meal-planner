@@ -449,11 +449,14 @@ def decode_proposals(values):
     return out
 
 
-def recipe_pool(dates, repeat_days):
+def recipe_pool(dates, repeat_days, replaced=frozenset()):
+    """Recipes not cooked in the last `repeat_days` nor already in the week.
+    Entries sitting in cells that are about to be replaced do not count."""
     window_start = dates[0] - timedelta(days=repeat_days)
-    recently = {rid for (rid,) in db.session.query(MealEntry.recipe_id)
-                .filter(MealEntry.date >= window_start, MealEntry.date <= dates[-1],
-                        MealEntry.leftover_of_id.is_(None), MealEntry.recipe_id.isnot(None))}
+    rows = (MealEntry.query.filter(MealEntry.date >= window_start, MealEntry.date <= dates[-1],
+                                   MealEntry.leftover_of_id.is_(None), MealEntry.recipe_id.isnot(None))
+            .all())
+    recently = {e.recipe_id for e in rows if (e.date, e.slot) not in replaced}
     return [r for r in Recipe.query.filter_by(archived=False).order_by(Recipe.id)
             if r.id not in recently]
 
@@ -484,15 +487,18 @@ def fill_cells(cells, pool, used, filled, rng, weekday_tag, allow_two_days, two_
 
 
 def fill_week(dates, slots, only_empty, repeat_days, weekday_tag, allow_two_days, seed):
+    """only_empty=True: propose for empty cells of the chosen slots, keep the rest.
+    only_empty=False: propose for every chosen cell; accepting replaces what is there."""
     rng = random.Random(seed)
-    existing = set(entries_for(dates).keys()) if only_empty else set()
     cells = [(d, s) for d in dates for s in SLOTS if s in slots]
-    pool = recipe_pool(dates, repeat_days)
-    return fill_cells(cells, pool, set(), set(existing), rng, weekday_tag, allow_two_days,
+    existing = set(entries_for(dates).keys()) if only_empty else set()
+    replaced = set() if only_empty else set(cells)
+    pool = recipe_pool(dates, repeat_days, replaced)
+    return fill_cells(cells, pool, set(), existing, rng, weekday_tag, allow_two_days,
                       get_setting("two_days_tag"))
 
 
-def reroll(proposals, dates, key, repeat_days, weekday_tag, allow_two_days, seed):
+def reroll(proposals, dates, key, repeat_days, weekday_tag, allow_two_days, seed, only_empty=True):
     """Replace one proposed cell (and its leftover child) with another recipe."""
     rng = random.Random(seed)
     old = next((p for p in proposals if (p["date"], p["slot"]) == key), None)
@@ -501,8 +507,11 @@ def reroll(proposals, dates, key, repeat_days, weekday_tag, allow_two_days, seed
     used = {p["recipe"].id for p in kept}
     if old:
         used.add(old["recipe"].id)
-    filled = set(entries_for(dates).keys()) | {(p["date"], p["slot"]) for p in kept}
-    pool = recipe_pool(dates, repeat_days)
+    proposed = {(p["date"], p["slot"]) for p in proposals}
+    filled = {(p["date"], p["slot"]) for p in kept}
+    if only_empty:
+        filled |= set(entries_for(dates).keys())
+    pool = recipe_pool(dates, repeat_days, set() if only_empty else proposed)
     fresh = fill_cells([key], pool, used, filled, rng, weekday_tag, allow_two_days,
                        get_setting("two_days_tag"))
     if not fresh and old:
@@ -510,10 +519,17 @@ def reroll(proposals, dates, key, repeat_days, weekday_tag, allow_two_days, seed
     return sorted(kept + fresh, key=lambda p: (p["date"], SLOTS.index(p["slot"])))
 
 
-def accept_proposals(proposals, eaters, guests_tenths):
+def accept_proposals(proposals, eaters, guests_tenths, replace=False):
     servings = {u.id: 10 for u in eaters}
     parents = {}
     created = 0
+    if replace and proposals:
+        cells = {(p["date"], p["slot"]) for p in proposals}
+        for e in (MealEntry.query.filter(MealEntry.date >= min(c[0] for c in cells),
+                                         MealEntry.date <= max(c[0] for c in cells)).all()):
+            if (e.date, e.slot) in cells:
+                db.session.delete(e)  # a cook entry takes its leftovers with it
+        db.session.flush()
     for p in sorted(proposals, key=lambda p: (p["leftover_of"] is not None, p["date"])):
         if p["leftover_of"] is None:
             entry = create_entry(p["date"], p["slot"], recipe=p["recipe"], servings=servings,

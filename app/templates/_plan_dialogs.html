@@ -58,7 +58,7 @@
       <input type="hidden" name="regen" value="1">
       <div class="stack sm">
         <label class="line"><input type="radio" name="only_empty" value="1" {% if fill.only_empty %}checked{% endif %}><span>Только пустые ячейки</span></label>
-        <label class="line"><input type="radio" name="only_empty" value="0" {% if not fill.only_empty %}checked{% endif %}><span>Всю неделю заново</span></label>
+        <label class="line"><input type="radio" name="only_empty" value="0" {% if not fill.only_empty %}checked{% endif %}><span>Заменить всё в выбранных приёмах</span></label>
       </div>
       <div class="chips">
         {% for s in slots %}<label class="tagchip filter {% if s in fill.fslots %}on{% endif %}"><input type="checkbox" name="fslot" value="{{ s }}" {% if s in fill.fslots %}checked{% endif %}>{{ SLOT_LABEL[s] }}</label>{% endfor %}
@@ -74,7 +74,8 @@
     <form method="post" action="{{ url_for('main.fill_accept') }}" class="stack">
       <input type="hidden" name="next" value="{{ here }}">
       {% for enc in fill.encoded %}<input type="hidden" name="p" value="{{ enc }}">{% endfor %}
-      <div class="line"><span class="badge soft">{{ fill.new_count }} новых</span></div>
+      {% if not fill.only_empty %}<input type="hidden" name="replace" value="1">{% endif %}
+      <div class="line"><span class="badge soft">{{ fill.new_count }} новых</span>{% if not fill.only_empty and fill.replaced %}<span class="badge warn">{{ fill.replaced }} заменить</span>{% endif %}</div>
       <div class="card flat">
         <div class="week compact" style="--slots: {{ fill.rows|length }}">
           <div class="day labels"><div class="dayhead corner"></div>{% for s in fill.rows %}<div class="slotlabel">{{ SLOT_LABEL[s] }}</div>{% endfor %}</div>
@@ -85,6 +86,7 @@
             <div class="cell">
               {% set p = fill.by_key.get((d, s)) %}
               {% if p %}
+              {% for e in by_cell.get((d, s), []) %}<div class="dish dim replaced"><span class="name">{{ e.label }}</span></div>{% endfor %}
               <div class="dish new {% if p.leftover_of %}leftover{% endif %}">
                 <span class="name">{% if p.leftover_of %}{{ icon("leftover") }}{% endif %}{{ p.recipe.name }}</span>
                 <span class="meta">{% if p.leftover_of %}<span>с {{ p.leftover_of[0]|dshort }}</span>{% else %}

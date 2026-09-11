@@ -191,3 +191,32 @@ def test_reroll_changes_only_one_cell(app):
         assert others <= {(p["date"], p["recipe"].id) for p in rerolled}
         new = next(p for p in rerolled if (p["date"], p["slot"]) == key)
         assert new["recipe"].id != proposals[1]["recipe"].id
+
+
+def test_fill_all_replaces_planned_cells_on_accept(app):
+    with app.app_context():
+        flour = ing("Мука")
+        a = recipe("А", 2, [(flour, 100, "g")], tags=["на два дня"])
+        b = recipe("Б", 2, [(flour, 100, "g")])
+        c = recipe("В", 2, [(flour, 100, "g")])
+        dates = services.week_dates(2026, 37)[:2]
+        users = User.query.all()
+        # Monday dinner А with its leftover on Tuesday lunch; Tuesday dinner Б
+        services.create_entry(dates[0], "dinner", recipe=a, servings={users[0].id: 10}, leftover_slot="lunch")
+        services.create_entry(dates[1], "dinner", recipe=b, servings={users[0].id: 10})
+        db.session.commit()
+
+        # only_empty: both dinners are taken → nothing proposed
+        assert services.fill_week(dates, ["dinner"], True, 14, None, False, seed=1) == []
+
+        # replace mode: both dinners re-proposed; the recipes being replaced stay eligible
+        proposals = services.fill_week(dates, ["dinner"], False, 14, None, False, seed=1)
+        assert {(p["date"], p["slot"]) for p in proposals} == {(dates[0], "dinner"), (dates[1], "dinner")}
+        assert {p["recipe"].name for p in proposals} <= {"А", "Б", "В"}
+
+        services.accept_proposals(proposals, users, 0, replace=True)
+        db.session.commit()
+        entries = MealEntry.query.order_by(MealEntry.date, MealEntry.slot).all()
+        # old dinners gone, А's Tuesday leftover went with its cook entry, two new dinners
+        assert [(e.date, e.slot) for e in entries] == [(dates[0], "dinner"), (dates[1], "dinner")]
+        assert all(e.leftover_of_id is None for e in entries)
