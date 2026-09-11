@@ -55,7 +55,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/leonid-98/food-planner:${{ steps.version.outputs.image_tag }}
+          tags: ghcr.io/leonid-98/meal-planner:${{ steps.version.outputs.image_tag }}
 
   deploy:
     needs: build

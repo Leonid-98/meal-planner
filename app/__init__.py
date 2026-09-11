@@ -95,7 +95,7 @@ def create_app(config=None):
     def seed_demo():
         """Create a few sample recipes so the planner is not empty on first run."""
         n = services.seed_demo_recipes()
-        print(f"добавлено рецептов: {n}")
+        print(f"recipes added: {n}")
 
     return app
 
