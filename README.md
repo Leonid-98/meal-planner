@@ -1,4 +1,4 @@
-# Меню — meal planner
+# meal planner
 
 A personal web app for two people: recipes with calories and macros computed
 from their ingredients, a week plan that supports batch cooking (cook once,
