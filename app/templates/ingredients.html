@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% set section = "ingredients" %}
+{% block title %}Меню — ингредиенты{% endblock %}
+{% block content %}
+<form class="toolbar" method="get" action="{{ url_for('main.ingredients') }}">
+  <input type="hidden" name="category" value="{{ category }}">
+  <input class="in search" name="q" value="{{ q }}" placeholder="Найти ингредиент…">
+  <div class="chips">
+    <a class="tagchip filter {% if not category %}on{% endif %}" href="{{ url_for('main.ingredients', q=q) }}">Все</a>
+    {% for s in sections %}<a class="tagchip filter {% if category == s %}on{% endif %}" href="{{ url_for('main.ingredients', q=q, category=s) }}">{{ s|lower }}</a>{% endfor %}
+  </div>
+  <span class="spacer"></span>
+  {% if missing_total %}<a class="badge warn" href="{{ url_for('main.ingredients', missing=1) }}">{{ missing_total }} без КБЖУ</a>{% endif %}
+  <a class="btn primary" href="{{ url_for('main.ingredients', q=q, category=category, new=1) }}">＋ Новый ингредиент</a>
+</form>
+{% macro ing_fields(ing, id) %}
+  <td><input class="in" name="name" value="{{ ing.name if ing else '' }}" form="{{ id }}" required></td>
+  <td><select class="in" name="category" form="{{ id }}">{% for s in sections %}<option value="{{ s }}" {% if (ing and ing.category == s) or (not ing and category == s) %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></td>
+  <td class="num"><input class="in num" name="kcal" value="{{ ing.kcal_100 if ing and ing.kcal_100 is not none else '' }}" form="{{ id }}" inputmode="numeric"></td>
+  <td class="num"><input class="in num sm" name="protein" value="{{ (ing.protein_100_dg|tenths) if ing and ing.protein_100_dg is not none else '' }}" form="{{ id }}" inputmode="decimal"></td>
+  <td class="num"><input class="in num sm" name="fat" value="{{ (ing.fat_100_dg|tenths) if ing and ing.fat_100_dg is not none else '' }}" form="{{ id }}" inputmode="decimal"></td>
+  <td class="num"><input class="in num sm" name="carbs" value="{{ (ing.carbs_100_dg|tenths) if ing and ing.carbs_100_dg is not none else '' }}" form="{{ id }}" inputmode="decimal"></td>
+  <td><select class="in" name="unit" form="{{ id }}">{% for u in UNITS %}<option value="{{ u }}" {% if ing and ing.default_unit == u %}selected{% endif %}>{{ UNIT_LABEL[u] }}</option>{% endfor %}</select></td>
+  <td class="num"><input class="in num" name="piece_grams" value="{{ ing.piece_grams if ing and ing.piece_grams else '' }}" form="{{ id }}" inputmode="numeric"></td>
+  <td class="center"><input type="checkbox" class="cbx" name="staple" form="{{ id }}" {% if ing and ing.is_staple %}checked{% endif %}></td>
+{% endmacro %}
+<section class="card">
+  <div class="scroll-x">
+  <table class="tbl ingredients">
+    <thead><tr><th>Название</th><th>Отдел</th><th class="num">ккал</th><th class="num">Б</th><th class="num">Ж</th><th class="num">У</th><th>Ед.</th><th class="num">1 шт, г</th><th>Базовый</th><th class="num">В рецептах</th><th></th></tr></thead>
+    <tbody>
+      {% if show_new %}
+      <tr class="edit">
+        {{ ing_fields(none, "ing-new") }}
+        <td></td>
+        <td class="actions"><form id="ing-new" method="post" action="{{ url_for('main.ingredient_create') }}"><input type="hidden" name="next" value="{{ url_for('main.ingredients', q=q, category=category) }}"><button class="btn primary small">Сохранить</button></form><a class="btn small" href="{{ url_for('main.ingredients', q=q, category=category) }}">Отмена</a></td>
+      </tr>
+      {% endif %}
+      {% for ing in rows %}
+      {% if ing.id == edit_id %}
+      <tr class="edit">
+        {{ ing_fields(ing, "ing-" ~ ing.id) }}
+        <td class="num muted">{{ usage.get(ing.id, 0) }}</td>
+        <td class="actions"><form id="ing-{{ ing.id }}" method="post" action="{{ url_for('main.ingredient_save', ingredient_id=ing.id) }}"><input type="hidden" name="next" value="{{ url_for('main.ingredients', q=q, category=category) }}"><button class="btn primary small">Сохранить</button></form>
+          <a class="btn small" href="{{ url_for('main.ingredients', q=q, category=category) }}">Отмена</a>
+          {% if not usage.get(ing.id) %}<form method="post" action="{{ url_for('main.ingredient_archive', ingredient_id=ing.id) }}"><input type="hidden" name="next" value="{{ url_for('main.ingredients', q=q, category=category) }}"><button class="x" aria-label="Удалить">{{ icon("trash") }}</button></form>{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td class="strong">{{ ing.name }}</td>
+        <td><span class="tagchip">{{ ing.category|lower }}</span></td>
+        <td class="num">{% if ing.has_macros %}{{ ing.kcal_100 }}{% else %}<span class="badge warn">нет</span>{% endif %}</td>
+        <td class="num">{{ ing.protein_100_dg|tenths if ing.protein_100_dg is not none else '—' }}</td>
+        <td class="num">{{ ing.fat_100_dg|tenths if ing.fat_100_dg is not none else '—' }}</td>
+        <td class="num">{{ ing.carbs_100_dg|tenths if ing.carbs_100_dg is not none else '—' }}</td>
+        <td>{{ UNIT_LABEL[ing.default_unit] }}</td>
+        <td class="num muted">{{ ing.piece_grams or '—' }}</td>
+        <td class="center">{% if ing.is_staple %}{{ icon("check") }}{% endif %}</td>
+        <td class="num muted">{{ usage.get(ing.id, 0) }}</td>
+        <td class="actions"><a class="x" href="{{ url_for('main.ingredients', q=q, category=category, edit=ing.id) }}" aria-label="Изменить">{{ icon("edit") }}</a></td>
+      </tr>
+      {% endif %}
+      {% else %}
+      <tr><td colspan="11" class="muted">Ничего не найдено.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

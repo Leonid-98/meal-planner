@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% set section = "recipes" %}
+{% block title %}Меню — {{ recipe.name }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <a class="back" href="{{ url_for('main.recipes') }}">{{ icon("left") }} Рецепты</a>
+  <span class="spacer"></span>
+  <form method="post" action="{{ url_for('main.recipe_archive', recipe_id=recipe.id) }}"><button class="btn danger">{{ "Вернуть из архива" if recipe.archived else "Архивировать" }}</button></form>
+  <a class="btn" href="{{ url_for('main.recipe_plan', recipe_id=recipe.id) }}">{{ icon("cal") }} Добавить в план</a>
+  <button class="btn primary" form="recipe-form" name="action" value="view">Сохранить</button>
+</div>
+<div class="editor-grid">
+  <div class="stack">
+    <form id="recipe-form" method="post" action="{{ url_for('main.recipe_save', recipe_id=recipe.id) }}" class="card card-pad stack">
+      <input class="in title-in" name="name" value="{{ recipe.name }}" required>
+      <div class="line wrap">
+        <label class="field">Порций<input class="in num" name="portions" value="{{ recipe.portions }}" inputmode="numeric"></label>
+        <label class="field">Время, мин<input class="in num" name="prep_minutes" value="{{ recipe.prep_minutes or '' }}" inputmode="numeric"></label>
+        <label class="field">Вес готового, г<input class="in num" name="cooked_weight_g" value="{{ recipe.cooked_weight_g or '' }}" inputmode="numeric"></label>
+        <div class="field">Теги<div class="chips">{% for t in tags %}<label class="tagchip filter {% if recipe.has_tag(t.name) %}on{% endif %}"><input type="checkbox" name="tags" value="{{ t.id }}" {% if recipe.has_tag(t.name) %}checked{% endif %}>{{ t.name }}</label>{% endfor %}</div></div>
+      </div>
+      <label class="field">Шаги<textarea class="in" name="steps" rows="5" placeholder="Один шаг — одна строка">{{ recipe.steps or '' }}</textarea></label>
+    </form>
+
+    <section class="card">
+      <table class="tbl lines">
+        <thead><tr><th>Ингредиент</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">≈ г</th><th class="num">ккал</th><th></th></tr></thead>
+        <tbody>
+          {% for l in lines %}
+          <tr>
+            <td class="strong">{{ l.ri.ingredient.name }}{% if not l.ri.ingredient.has_macros %} <span class="badge warn">≈ нет данных</span>{% elif l.grams is none %} <span class="badge warn">нет веса 1 шт</span>{% endif %}</td>
+            <td class="num"><form method="post" action="{{ url_for('main.recipe_line_update', recipe_id=recipe.id, line_id=l.ri.id) }}" class="contents" id="line-{{ l.ri.id }}"><input class="in num" name="qty" value="{{ l.ri.qty_tenths|tenths }}" inputmode="decimal" hx-trigger="change" hx-post="{{ url_for('main.recipe_line_update', recipe_id=recipe.id, line_id=l.ri.id) }}"></form></td>
+            <td><select class="in" name="unit" form="line-{{ l.ri.id }}" hx-trigger="change" hx-post="{{ url_for('main.recipe_line_update', recipe_id=recipe.id, line_id=l.ri.id) }}" hx-include="#line-{{ l.ri.id }}">{% for u in UNITS %}<option value="{{ u }}" {% if u == l.ri.unit %}selected{% endif %}>{{ UNIT_LABEL[u] }}</option>{% endfor %}</select></td>
+            <td class="num muted">{{ l.grams|num if l.grams is not none else "—" }}</td>
+            <td class="num strong">{{ l.kcal|num if l.kcal is not none else "—" }}</td>
+            <td><form method="post" action="{{ url_for('main.recipe_line_delete', recipe_id=recipe.id, line_id=l.ri.id) }}"><button class="x" aria-label="Удалить">{{ icon("trash") }}</button></form></td>
+          </tr>
+          {% endfor %}
+          <tr class="edit">
+            <td colspan="6">
+              {% if new_ing %}
+              <form method="post" action="{{ url_for('main.recipe_line_create_ingredient', recipe_id=recipe.id) }}" class="stack sm new-ing">
+                <div class="line wrap">
+                  <span class="strong">Новый ингредиент</span>
+                  <input class="in grow" name="name" value="{{ new_ing.name }}" required>
+                  <select class="in" name="category">{% for s in sections %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+                </div>
+                <div class="line wrap">
+                  <label class="field">ккал / 100 г<input class="in num" name="kcal" inputmode="numeric"></label>
+                  <label class="field">Б<input class="in num" name="protein" inputmode="decimal"></label>
+                  <label class="field">Ж<input class="in num" name="fat" inputmode="decimal"></label>
+                  <label class="field">У<input class="in num" name="carbs" inputmode="decimal"></label>
+                  <label class="field">Ед.<select class="in" name="unit">{% for u in UNITS %}<option value="{{ u }}" {% if u == new_ing.unit %}selected{% endif %}>{{ UNIT_LABEL[u] }}</option>{% endfor %}</select></label>
+                  <label class="field">1 шт, г<input class="in num" name="piece_grams" inputmode="numeric"></label>
+                  <label class="field">В рецепт<span class="line"><input class="in num" name="qty" value="{{ new_ing.qty }}" inputmode="decimal"><select class="in" name="line_unit">{% for u in UNITS %}<option value="{{ u }}" {% if u == new_ing.unit %}selected{% endif %}>{{ UNIT_LABEL[u] }}</option>{% endfor %}</select></span></label>
+                </div>
+                <div class="line"><button class="btn primary small">Создать и добавить</button><a class="btn small" href="{{ url_for('main.recipe_edit', recipe_id=recipe.id) }}">Отмена</a></div>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('main.recipe_line_add', recipe_id=recipe.id) }}" class="line wrap">
+                <input class="in grow" name="name" list="ingredient-names" placeholder="Ингредиент…" autocomplete="off" required>
+                <datalist id="ingredient-names">{% for n in names %}<option value="{{ n }}"></option>{% endfor %}</datalist>
+                <input class="in num" name="qty" value="1" inputmode="decimal">
+                <select class="in" name="unit">{% for u in UNITS %}<option value="{{ u }}">{{ UNIT_LABEL[u] }}</option>{% endfor %}</select>
+                <button class="btn small">{{ icon("plus") }} Добавить</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+  <aside class="stack">
+    <section class="card card-pad stack sm">
+      <h4>На порцию</h4>
+      {% if totals.has_data %}
+      <div class="line"><span class="kcal big">{{ totals.per_portion.kcal|num }}</span><span class="muted">ккал</span>{% if not totals.complete %}<span class="badge warn">≈ у {{ totals.missing|length }} без КБЖУ</span>{% endif %}</div>
+      <div class="macro-tiles">
+        <div><span class="xs muted">Белки</span><span class="kcal">{{ totals.per_portion.protein|g1 }} г</span></div>
+        <div><span class="xs muted">Жиры</span><span class="kcal">{{ totals.per_portion.fat|g1 }} г</span></div>
+        <div><span class="xs muted">Углеводы</span><span class="kcal">{{ totals.per_portion.carbs|g1 }} г</span></div>
+      </div>
+      <div class="stack xs small sep">
+        {% if totals.per_100g %}<div class="line"><span class="muted">На 100 г готового</span><span class="spacer"></span><span class="kcal">{{ totals.per_100g|num }} ккал</span></div>{% endif %}
+        <div class="line"><span class="muted">Всё блюдо</span><span class="spacer"></span><span class="kcal">{{ totals.total.kcal|num }} ккал</span></div>
+        {% if totals.portion_grams %}<div class="line"><span class="muted">Порция ≈</span><span class="spacer"></span><span class="kcal">{{ totals.portion_grams|num }} г</span></div>{% endif %}
+      </div>
+      {% else %}<div class="muted small">Добавьте ингредиенты — ккал посчитаются сами.</div>{% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

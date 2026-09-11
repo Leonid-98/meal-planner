@@ -1,0 +1,83 @@
+<div class="app" style="min-height: 1280px; padding-bottom: 40px;"><div class="shell" style="display: flex; flex-direction: column; gap: 28px; padding-top: 28px;">
+  <header style="display: flex; align-items: flex-end; gap: 16px;">
+    <div class="brand" style="font-size: 1.6rem;"><span class="brand-mark" style="width: 36px; height: 36px; font-size: 1.1rem;">М</span> Меню</div>
+    <div class="muted" style="font-size: 1.05rem;">планировщик еды на неделю · макет для обсуждения, не готовое приложение</div>
+  </header>
+
+  <section style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: start;">
+    <div class="card card-pad" style="display: flex; flex-direction: column; gap: 14px;">
+      <h3>Зачем</h3>
+      <p style="margin: 0; font-size: 0.92rem; line-height: 1.5;">Убрать шаг «подумать, что поесть». Планировать можно хоть один ужин в день — пустые ячейки не мешают. Из плана собирается список покупок на сегодня, завтра, три дня или неделю; в магазине он открывается на телефоне. Ккал и Б/Ж/У считаются из ингредиентов и нужны как справка для внешнего трекера — сам планировщик калории не отслеживает.</p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;"><span class="badge soft">двое: Лёня и Аня, иногда гости</span><span class="badge soft">вход через Google, как в «Тратах»</span><span class="badge soft">телефон + ноутбук</span><span class="badge muted">не трекер калорий</span><span class="badge muted">без ИИ и внешних баз в первой версии</span></div>
+    </div>
+    <div class="card card-pad" style="display: flex; flex-direction: column; gap: 10px;">
+      <h3>Экраны на этой доске</h3>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; font-size: 0.86rem;">
+        <div>1 · Неделя <span class="muted xs">главный экран</span></div><div>8 · Сегодня <span class="muted xs">телефон</span></div>
+        <div>2 · Выбор блюда в ячейку</div><div>9 · Покупки <span class="muted xs">телефон, в магазине</span></div>
+        <div>3 · Заполнить неделю</div><div>10 · Рецепт, режим готовки <span class="muted xs">телефон</span></div>
+        <div>4 · Рецепты</div><div>11 · Неделя <span class="muted xs">телефон</span></div>
+        <div>5 · Рецепт, редактор</div><div>12 · Настройки</div>
+        <div>6 · Ингредиенты</div><div>13 · Неделя, тёмная тема</div>
+        <div>7 · Покупки <span class="muted xs">ноутбук, выбор периода</span></div><div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-pad" style="display: flex; flex-direction: column; gap: 16px;">
+    <h3>Обозначения</h3>
+    <div class="legend">
+      <div class="item">
+        <div class="dish" style="max-width: 240px;"><div class="name">Куриная грудка с рисом</div><div class="meta"><span class="avs"><i class="av p1">Л</i><i class="av p2">А</i></span><span>×1,5 · ×1</span><span class="kcal">480</span></div><div class="meta"><svg class="i" viewBox="0 0 24 24"><path d="M9 10l-5 5 5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg><span>на завтра → обед</span></div></div>
+        <div class="cap"><b>Блюдо в плане.</b> Кто ест и сколько порций, ккал на порцию. Строка со стрелкой: часть уходит в остатки на завтра.</div>
+      </div>
+      <div class="item">
+        <div class="dish leftover" style="max-width: 240px;"><div class="name"><svg class="i" viewBox="0 0 24 24"><path d="M9 10l-5 5 5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>Куриная грудка с рисом</div><div class="meta"><span class="avs"><i class="av p1">Л</i><i class="av p2">А</i></span><span>остатки, с пн</span><span class="kcal">480</span></div></div>
+        <div class="cap"><b>Остатки.</b> Готовили вчера, едим сегодня. Калории считаются, в список покупок ничего не добавляют.</div>
+      </div>
+      <div class="item">
+        <div class="dish free" style="max-width: 240px;"><div class="name">Ужин у родителей</div><div class="meta"><span class="avs"><i class="av p1">Л</i><i class="av p2">А</i></span><span class="kcal">—</span></div></div>
+        <div class="cap"><b>Свой текст.</b> Заказ, кафе, в гостях. План остаётся честным, ничего не считается.</div>
+      </div>
+      <div class="item">
+        <div style="display: flex; align-items: center; gap: 10px;"><i class="av p1 lg">Л</i><span class="small">Лёня</span><i class="av p2 lg">А</i><span class="small">Аня</span><i class="av g lg" style="width: auto; padding: 0 8px;">+2</i><span class="small">гости</span></div>
+        <div class="cap"><b>Люди.</b> Две постоянные цели по калориям, гости считаются только как порции.</div>
+      </div>
+      <div class="item">
+        <div style="display: flex; flex-direction: column; max-width: 260px;">
+          <div class="srow" style="min-height: 40px;"><span class="cb"></span><span class="nm">Свёкла</span><span class="qty">500 г</span></div>
+          <div class="srow done" style="min-height: 40px;"><span class="cb on"><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="nm">Огурцы</span><span class="qty">2 шт</span></div>
+          <div class="srow" style="min-height: 40px;"><span class="cb have"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg></span><span class="nm muted">Лук</span><span class="badge warn">есть дома</span><span class="qty">4 шт</span></div>
+        </div>
+        <div class="cap"><b>Строка покупок.</b> Купить · куплено (тап) · есть дома (долгое нажатие). Отметки сохраняются при смене периода.</div>
+      </div>
+      <div class="item">
+        <div style="display: flex; flex-direction: column; gap: 8px; max-width: 240px;">
+          <div class="badge warn" style="align-self: flex-start;">≈ нет данных</div>
+        </div>
+        <div class="cap"><b>Приблизительно.</b> У ингредиента нет КБЖУ — блюдо всё равно можно планировать, цифра помечена.</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+    <div class="card card-pad flow"><span class="grp" style="align-self: flex-start;">1 · Новый рецепт</span><ol><li>Рецепты → «Новый рецепт», название, порций 4.</li><li>Ингредиенты по строке: набрать «кур…», выбрать, 600 г.</li><li>Нет в базе — «Создать», ввести КБЖУ с упаковки, не уходя со страницы.</li><li>Справа ккал и Б/Ж/У на порцию считаются сами. Теги, шаги, сохранить.</li></ol></div>
+    <div class="card card-pad flow"><span class="grp" style="align-self: flex-start;">2 · Спланировать неделю</span><ol><li>Тап по пустой ячейке → выбор блюда.</li><li>Борщ на ужин среды, Лёня 1, Аня 1.</li><li>Переключатель «и на завтра → обед»: в четверг появляется карточка остатков.</li><li>Итоги дня внизу пересчитались.</li></ol></div>
+    <div class="card card-pad flow"><span class="grp" style="align-self: flex-start;">3 · Магазин</span><ol><li>«Покупки» → выбрать период: сегодня, завтра, 3 дня или неделя. Список сгруппирован по отделам.</li><li>Дома отметить «есть дома» лишнее.</li><li>В магазине с телефона: тап — куплено, уходит вниз.</li><li>Дописать кофе и хлеб отдельной строкой.</li></ol></div>
+    <div class="card card-pad flow"><span class="grp" style="align-self: flex-start;">4 · Скучно думать</span><ol><li>«Заполнить неделю»: только пустые ужины.</li><li>Правила: не повторять 14 дней, будни — «быстро», можно «на два дня».</li><li>Посмотреть предложение, перекрутить пару ячеек.</li><li>«Принять» → список покупок готов.</li></ol></div>
+  </section>
+
+  <section class="card card-pad" style="display: flex; flex-direction: column; gap: 10px; border-color: var(--accent); background: var(--accent-soft);">
+    <h3>Вопросы к вам</h3>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px; font-size: 0.9rem; line-height: 1.45;">
+      <div>1. Название «Меню» и адрес food.leonid98.eu — ок или предложите своё?</div>
+      <div>5. Заполнение недели без ИИ (случайно по правилам) — достаточно для старта?</div>
+      <div>2. Какие приёмы пищи показывать по умолчанию: только ужин, или завтрак + обед + ужин?</div>
+      <div>6. Отделы магазина: какие и в каком порядке (Rimi, Selver, Prisma)?</div>
+      <div>3. Порции по людям (Л / А / гости) или проще «сколько порций всего»?</div>
+      <div>7. Период покупок по умолчанию: завтра или ближайшие 3 дня?</div>
+      <div>4. Б/Ж/У показывать в календаре, или только ккал, а Б/Ж/У внутри рецепта?</div>
+      <div>8. Чего не хватает, чтобы вы реально открыли это в воскресенье вечером?</div>
+    </div>
+  </section>
+</div></div>

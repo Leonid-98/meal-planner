@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% set section = "shopping" %}
+{% block title %}Меню — покупки{% endblock %}
+{% block content %}
+<div class="toolbar shop-head">
+  <div class="grow"><h1 class="h1">Покупки</h1><div class="xs muted">{{ label }}{% if data.total %} · {{ data.done }} из {{ data.total }}{% endif %}</div></div>
+  <form method="post" action="{{ url_for('main.shopping_clear') }}"><input type="hidden" name="next" value="{{ here }}"><button class="icon-btn" title="Убрать купленное">{{ icon("refresh") }}<span class="desk"> Убрать купленное</span></button></form>
+</div>
+<div class="toolbar period-bar">
+  <nav class="seg" aria-label="Период">
+    {% for key, name in PERIODS if key != "custom" %}<a class="{% if preset == key %}on{% endif %}" href="{{ url_for('main.shopping', period=key) }}">{{ name }}</a>{% endfor %}
+    <a class="{% if preset == 'custom' %}on{% endif %}" href="{{ url_for('main.shopping', period='custom', **{'from': start.isoformat(), 'to': end.isoformat()}) }}" data-toggle="#custom-range">Даты</a>
+  </nav>
+  <form id="custom-range" method="get" action="{{ url_for('main.shopping') }}" class="line {% if preset != 'custom' %}hidden{% endif %}">
+    <input type="hidden" name="period" value="custom">
+    <input class="in" type="date" name="from" value="{{ start.isoformat() }}"><span class="muted">—</span><input class="in" type="date" name="to" value="{{ end.isoformat() }}">
+    <button class="btn small">Показать</button>
+  </form>
+</div>
+{% if data.total %}<div class="bar"><i style="width: {{ (100 * data.done / data.total)|round }}%"></i></div>{% endif %}
+
+{% macro mark_form(item) %}
+<form method="post" action="{{ url_for('main.shopping_mark', ingredient_id=item.ingredient.id) }}" class="srow {% if item.state == 'bought' %}done{% endif %}" data-longpress>
+  <input type="hidden" name="next" value="{{ here }}">
+  <input type="hidden" name="valid_until" value="{{ end.isoformat() }}">
+  <button class="cb {% if item.state == 'bought' %}on{% elif item.state == 'have' %}have{% endif %}" name="state" value="{{ 'todo' if item.state != 'todo' else 'bought' }}" aria-label="Куплено">{% if item.state == 'bought' %}{{ icon("check") }}{% elif item.state == 'have' %}{{ icon("home") }}{% endif %}</button>
+  <span class="nm {% if item.state == 'have' %}muted{% endif %}" title="{{ item.dishes|join(', ') }}">{{ item.ingredient.name }}</span>
+  {% if item.state == 'have' %}<span class="badge warn">есть дома</span>{% endif %}
+  <span class="qty">{{ item.qty }}</span>
+  <button class="x have-btn desk" name="state" value="{{ 'todo' if item.state == 'have' else 'have' }}" title="Есть дома">{{ icon("home") }}</button>
+</form>
+{% endmacro %}
+
+<div class="shop-columns">
+  {% for sec in data.sections %}
+  <section class="shop-section">
+    <div class="sec-head"><span class="grp">{{ sec.name }}</span></div>
+    {% for item in sec["items"] %}{{ mark_form(item) }}{% endfor %}
+  </section>
+  {% endfor %}
+  {% if data.extras %}
+  <section class="shop-section">
+    <div class="sec-head"><span class="grp">Своё</span></div>
+    {% for x in data.extras %}
+    <form method="post" action="{{ url_for('main.shopping_extra_state', extra_id=x.id) }}" class="srow {% if x.state == 'bought' %}done{% endif %}">
+      <input type="hidden" name="next" value="{{ here }}">
+      <button class="cb {% if x.state == 'bought' %}on{% endif %}" aria-label="Куплено">{% if x.state == 'bought' %}{{ icon("check") }}{% endif %}</button>
+      <span class="nm">{{ x.name }}</span><span class="qty">{{ x.qty_text or '' }}</span>
+      <button class="x desk" formaction="{{ url_for('main.shopping_extra_delete', extra_id=x.id) }}" title="Удалить">{{ icon("trash") }}</button>
+    </form>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% if not data.sections and not data.extras %}
+<div class="card card-pad muted">На этот период ничего готовить не запланировано.</div>
+{% endif %}
+
+{% if data.staples %}
+<details class="staples">
+  <summary class="line muted small">{{ icon("down") }}<span>Проверить дома</span><span class="xs">{{ data.staples|map(attribute='ingredient.name')|join(', ') }}</span></summary>
+  <div class="shop-section">{% for item in data.staples %}{{ mark_form(item) }}{% endfor %}</div>
+</details>
+{% endif %}
+
+<form method="post" action="{{ url_for('main.shopping_extra_add') }}" class="srow add-row">
+  <input type="hidden" name="next" value="{{ here }}">
+  <span class="cb dashed">{{ icon("plus") }}</span>
+  <input class="in grow" name="name" placeholder="Добавить строку" required>
+  <input class="in qty-in" name="qty" placeholder="кол-во">
+  <button class="btn small">{{ icon("plus") }}</button>
+</form>
+{% if data.dishes %}
+<div class="line wrap dishes"><span class="grp muted-grp">Для каких блюд</span>{% for d in data.dishes %}<span class="tagchip">{{ d }}</span>{% endfor %}</div>
+{% endif %}
+{% endblock %}

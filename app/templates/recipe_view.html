@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% set section = "recipes" %}
+{% block title %}Меню — {{ recipe.name }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <a class="back" href="{{ url_for('main.recipes') }}">{{ icon("left") }} Рецепты</a>
+  <span class="spacer"></span>
+  <a class="btn" href="{{ url_for('main.recipe_plan', recipe_id=recipe.id) }}">{{ icon("cal") }} В план</a>
+  <a class="btn" href="{{ url_for('main.recipe_edit', recipe_id=recipe.id) }}">{{ icon("edit") }} Изменить</a>
+</div>
+<div class="view-grid">
+  <div class="stack">
+    <div class="line top"><h1 class="h1 grow">{{ recipe.name }}</h1></div>
+    <div class="line wrap xs muted"><span class="chips">{% for t in recipe.tags %}<span class="tagchip">{{ t.name }}</span>{% endfor %}</span>{% if recipe.prep_minutes %}<span>{{ recipe.prep_minutes }} мин</span>{% endif %}<span>{{ last|since(g.today) }}</span></div>
+    <form method="get" class="card card-pad line" action="{{ url_for('main.recipe_view', recipe_id=recipe.id) }}">
+      <span class="grow"><span class="strong">Готовим порций</span>{% if portions != recipe.portions %}<span class="xs muted"> · рецепт на {{ recipe.portions }}</span>{% endif %}</span>
+      <span class="stepper" data-stepper data-submit><button type="button" class="step" data-step="-1">−</button><input class="stepval" name="portions" value="{{ portions }}" inputmode="numeric" data-min="1"><button type="button" class="step" data-step="1">+</button></span>
+    </form>
+    {% if totals.has_data %}
+    <div class="macros wide"><span><b>{{ totals.per_portion.kcal|num }}</b> ккал / порцию{% if not totals.complete %} ≈{% endif %}</span><span>Б <b>{{ totals.per_portion.protein|g1 }}</b></span><span>Ж <b>{{ totals.per_portion.fat|g1 }}</b></span><span>У <b>{{ totals.per_portion.carbs|g1 }}</b></span></div>
+    {% endif %}
+    <section class="stack xs">
+      <span class="grp">Ингредиенты</span>
+      <div class="checklist">
+        {% for l in lines %}
+        <label class="srow"><input type="checkbox" class="cb-input"><span class="cb"></span><span class="nm">{{ l.ri.ingredient.name }}</span><span class="qty strong">{{ l.qty_tenths|qty(l.ri.unit) }}</span></label>
+        {% else %}<div class="muted small">Ингредиентов пока нет.</div>{% endfor %}
+      </div>
+    </section>
+    {% if steps %}
+    <section class="stack xs">
+      <span class="grp">Шаги</span>
+      <ol class="steps">{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ol>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

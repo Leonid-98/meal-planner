@@ -1,0 +1,49 @@
+<div class="backdrop"></div>
+<div class="modal wide">
+  <div class="dlg-head"><h2>Заполнить неделю</h2><span class="muted small">7 — 13 сентября</span><span class="dlg-close">×</span></div>
+  <div style="display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px;">
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="radio on"></span><span>Только пустые ячейки</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="radio"></span><span>Всю неделю заново</span></div>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <span class="tagchip filter">Завтрак</span><span class="tagchip filter">Обед</span><span class="tagchip filter on">Ужин</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="switch on"></span><span style="flex: 1; font-size: 0.9rem;">Не повторять блюда</span><span class="in" style="width: 84px; justify-content: flex-end;">14 дн.</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="switch on"></span><span style="flex: 1; font-size: 0.9rem;">В будни — с тегом</span><span class="tagchip on">быстро</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="switch on"></span><span style="flex: 1; font-size: 0.9rem;">Разрешить «на два дня»</span></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;"><span class="badge soft">2 новых блюда</span><span class="spacer"></span><span class="btn small"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg> Ещё раз</span></div>
+      <div class="card flat">
+        <div class="week" style="grid-template-columns: 60px repeat(7, minmax(0, 1fr));">
+          <div class="corner"></div>
+          <div class="dayhead">Пн</div><div class="dayhead">Вт</div><div class="dayhead">Ср</div><div class="dayhead">Чт</div><div class="dayhead today">Пт</div><div class="dayhead">Сб</div><div class="dayhead">Вс</div>
+          <div class="slotlabel">Обед</div>
+<div class="cell"><div class="add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+<div class="cell"><div class="dish dim leftover"><div class="name">Куриная грудка</div><div class="meta"><span>с пн</span><span class="kcal">480</span></div></div></div>
+<div class="cell"><div class="add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+<div class="cell"><div class="dish dim leftover"><div class="name">Борщ</div><div class="meta"><span>со ср</span><span class="kcal">320</span></div></div></div>
+<div class="cell"><div class="dish new leftover"><div class="name">Плов</div><div class="meta"><span>с чт</span><span class="kcal">610</span></div></div></div>
+<div class="cell"><div class="dish dim leftover"><div class="name">Паста болоньезе</div><div class="meta"><span>с пт</span><span class="kcal">620</span></div></div></div>
+<div class="cell"><div class="dish dim"><div class="name">Чечевичный суп</div><div class="meta"><span></span><span class="kcal">290</span></div></div></div>
+          <div class="slotlabel">Ужин</div>
+<div class="cell"><div class="dish dim"><div class="name">Куриная грудка с рисом</div><div class="meta"><span></span><span class="kcal">480</span></div></div></div>
+<div class="cell"><div class="dish new"><div class="name">Шакшука</div><div class="meta"><span><svg class="i" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg> новое</span><span class="kcal">330</span></div></div></div>
+<div class="cell"><div class="dish dim"><div class="name">Борщ</div><div class="meta"><span></span><span class="kcal">320</span></div></div></div>
+<div class="cell"><div class="dish new"><div class="name">Плов</div><div class="meta"><span><svg class="i" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg> на два дня</span><span class="kcal">610</span></div></div></div>
+<div class="cell"><div class="dish dim"><div class="name">Паста болоньезе</div><div class="meta"><span></span><span class="kcal">620</span></div></div></div>
+<div class="cell"><div class="dish dim"><div class="name">Лосось с картофелем</div><div class="meta"><span></span><span class="kcal">540</span></div></div></div>
+<div class="cell"><div class="dish dim free"><div class="name">Ужин у родителей</div><div class="meta"><span></span><span class="kcal">—</span></div></div></div>
+        </div>
+      </div>
+      <div class="dlg-foot" style="margin-top: 4px;">
+        <span class="btn primary"><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Принять</span>
+        <span class="btn">Отмена</span>
+      </div>
+    </div>
+  </div>
+</div>

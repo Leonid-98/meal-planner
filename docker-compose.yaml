@@ -1,0 +1,14 @@
+# Local development only — production runs from the homelab compose on the
+# server (oauth2-proxy + caddy + volume + real emails). MOCK_AUTH_EMAIL stands
+# in for the missing auth proxy here; switch it to user2@example.com to test
+# as Аня. Data lives in ./data-local (gitignored).
+services:
+  app:
+    build: .
+    container_name: food-planner-local
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data-local:/data
+    environment:
+      MOCK_AUTH_EMAIL: user1@example.com

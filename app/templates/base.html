@@ -1,0 +1,114 @@
+{% from "_macros.html" import icon %}<!doctype html>
+<html lang="ru"
+      {%- if g.user and g.user.theme != "system" %} data-theme="{{ g.user.theme }}"{% endif %}
+      {%- if g.user and g.user.accent_color != "teal" %} data-accent="{{ g.user.accent_color }}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Меню{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <meta name="htmx-config" content='{"scrollIntoViewOnBoost": false}'>
+  <script src="{{ url_for('static', filename='htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+<div id="page" data-dlg="{{ dlg or '' }}" hx-boost="true" hx-target="#page" hx-select="#page" hx-swap="outerHTML">
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('main.index') }}"><span class="brand-mark">М</span> Меню <span class="version">v{{ APP_VERSION }}</span></a>
+    <nav class="nav" aria-label="Разделы">
+      <a class="{% if section == 'week' %}current{% endif %}" href="{{ url_for('main.index') }}">Неделя</a>
+      <a class="{% if section == 'recipes' %}current{% endif %}" href="{{ url_for('main.recipes') }}">Рецепты</a>
+      <a class="{% if section == 'ingredients' %}current{% endif %}" href="{{ url_for('main.ingredients') }}">Ингредиенты</a>
+      <a class="{% if section == 'shopping' %}current{% endif %}" href="{{ url_for('main.shopping') }}">Покупки</a>
+    </nav>
+    <button class="icon-btn desk" data-open="dlg-settings" aria-haspopup="dialog">⚙ Настройки</button>
+    <button class="user-chip" data-open="dlg-user" aria-haspopup="dialog">{{ g.user.display_name if g.user else "Гость" }}</button>
+  </header>
+
+  {% block content %}{% endblock %}
+</div>
+
+{% block dialogs %}{% endblock %}
+
+<dialog class="modal" id="dlg-settings" aria-label="Настройки">
+  <div class="dlg-head"><h2>Настройки</h2><button class="dlg-close" data-close aria-label="Закрыть">✕</button></div>
+  <form method="post" action="{{ url_for('main.settings_save') }}" class="settings-grid">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <div class="stack">
+      <section class="stack sm">
+        <h4>Кто ест по умолчанию</h4>
+        {% set eaters = setting("default_eaters").split(",") %}
+        {% for u in all_users %}
+        <label class="line"><i class="av lg {{ 'p1' if u.side == 'left' else 'p2' }}">{{ u.initial }}</i><span class="grow">{{ u.display_name }}</span>
+          <input type="checkbox" class="cbx" name="default_eaters" value="{{ u.side }}" {% if u.side in eaters %}checked{% endif %}></label>
+        {% endfor %}
+        <label class="line"><i class="av lg g">{{ icon("users") }}</i><span class="grow">Гости</span><input class="in num" name="default_guests" value="{{ setting('default_guests') }}"></label>
+      </section>
+      <section class="stack sm">
+        <h4>Приёмы пищи в календаре</h4>
+        {% set vis = setting("visible_slots").split(",") %}
+        <div class="chips">
+          {% for s in SLOTS %}<label class="tagchip filter {% if s in vis %}on{% endif %}"><input type="checkbox" name="visible_slots" value="{{ s }}" {% if s in vis %}checked{% endif %}>{{ SLOT_LABEL[s] }}</label>{% endfor %}
+        </div>
+      </section>
+      <section class="stack sm">
+        <h4>Планирование</h4>
+        <label class="line"><span class="grow">Не повторять блюда, дней</span><input class="in num" name="repeat_days" value="{{ setting('repeat_days') }}"></label>
+        <label class="line"><span class="grow">Ужин в будни — тег</span><input class="in" style="width: 130px" name="weekday_tag" value="{{ setting('weekday_tag') }}"></label>
+        <label class="line"><span class="grow">Б/Ж/У в календаре</span><input type="checkbox" class="cbx" name="show_macros" {% if setting('show_macros') == '1' %}checked{% endif %}></label>
+      </section>
+      <section class="stack sm">
+        <h4>Список покупок</h4>
+        <div class="line"><span class="grow">Период по умолчанию</span>
+          <span class="seg sm">{% for key, name in PERIODS if key != "custom" %}<label class="{% if setting('shopping_period') == key %}on{% endif %}"><input type="radio" name="shopping_period" value="{{ key }}" {% if setting('shopping_period') == key %}checked{% endif %}>{{ name }}</label>{% endfor %}</span></div>
+        <label class="line"><span class="grow">Округлять граммы до</span><input class="in num" name="round_grams" value="{{ setting('round_grams') }}"></label>
+      </section>
+    </div>
+    <div class="stack">
+      <section class="stack sm">
+        <h4>Теги</h4>
+        <div class="chips">
+          {% for t in all_tags %}<span class="tagchip filter">{{ t.name }} <button class="x" formaction="{{ url_for('main.tag_delete', tag_id=t.id) }}" formnovalidate aria-label="Удалить тег">{{ icon("x") }}</button></span>{% endfor %}
+        </div>
+        <div class="line"><input class="in grow" name="name" placeholder="новый тег" form="tag-add-form"><button class="btn small" form="tag-add-form">{{ icon("plus") }}</button></div>
+      </section>
+      <section class="stack sm">
+        <h4>Отделы магазина</h4>
+        <textarea class="in" name="sections" rows="7">{{ setting('sections').split(',')|join('\n') }}</textarea>
+      </section>
+    </div>
+    <div class="dlg-foot"><button class="btn primary">Сохранить</button></div>
+  </form>
+  <form id="tag-add-form" method="post" action="{{ url_for('main.tag_add') }}"><input type="hidden" name="next" value="{{ request.path }}?dlg=settings"></form>
+</dialog>
+
+<dialog class="modal narrow" id="dlg-user" aria-label="Личные настройки">
+  <div class="dlg-head"><h2>{{ g.user.display_name if g.user else "Гость" }}</h2><button class="dlg-close" data-close aria-label="Закрыть">✕</button></div>
+  {% set accent = g.user.accent_color if g.user else "teal" %}
+  {% set theme = g.user.theme if g.user else "system" %}
+  <p class="pref-label">Цвет акцента</p>
+  <div class="accent-row">
+    {% for value, color, name in [("teal", "#0E8F7E", "Бирюзовый"), ("violet", "#5B4DD3", "Фиолетовый"), ("ocean", "#0284C7", "Синий"), ("coral", "#D8544A", "Коралловый"), ("graphite", "#24293A", "Графитовый"), ("rose", "#B84381", "Розовый")] %}
+    <button class="accent-btn {% if accent == value %}active{% endif %}" data-accent-value="{{ value }}"><span class="dot" style="background:{{ color }}"></span>{{ name }}</button>
+    {% endfor %}
+  </div>
+  <p class="pref-label gap-top">Тема</p>
+  <div class="accent-row">
+    {% for value, name in [("system", "◐ Системная"), ("light", "☀ Светлая"), ("dark", "☾ Тёмная")] %}
+    <button class="accent-btn theme-btn {% if theme == value %}active{% endif %}" data-theme-value="{{ value }}">{{ name }}</button>
+    {% endfor %}
+  </div>
+  <p class="pref-label gap-top">Общие настройки</p>
+  <button class="btn" data-open="dlg-settings" data-close>⚙ Настройки</button>
+</dialog>
+
+<nav class="tabbar" aria-label="Разделы">
+  <a class="{% if section == 'today' %}current{% endif %}" href="{{ url_for('main.day_view', iso='today') }}">{{ icon("sun", "i xl") }} Сегодня</a>
+  <a class="{% if section == 'week' %}current{% endif %}" href="{{ url_for('main.index') }}">{{ icon("cal", "i xl") }} Неделя</a>
+  <a class="{% if section == 'recipes' %}current{% endif %}" href="{{ url_for('main.recipes') }}">{{ icon("book", "i xl") }} Рецепты</a>
+  <a class="{% if section == 'shopping' %}current{% endif %}" href="{{ url_for('main.shopping') }}">{{ icon("cart", "i xl") }} Покупки</a>
+</nav>
+</div>
+</body>
+</html>

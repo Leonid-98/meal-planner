@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% set section = "recipes" %}
+{% block title %}Меню — рецепты{% endblock %}
+{% block content %}
+<form class="toolbar" method="get" action="{{ url_for('main.recipes') }}">
+  <input type="hidden" name="tag" value="{{ tag }}">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <input class="in search" name="q" value="{{ q }}" placeholder="Найти рецепт…">
+  <div class="chips">
+    <a class="tagchip filter {% if not tag %}on{% endif %}" href="{{ url_for('main.recipes', q=q, sort=sort) }}">Все</a>
+    {% for t in tags %}<a class="tagchip filter {% if tag == t.name %}on{% endif %}" href="{{ url_for('main.recipes', q=q, sort=sort, tag=t.name) }}">{{ t.name }}</a>{% endfor %}
+  </div>
+  <span class="spacer"></span>
+  <a class="btn {% if sort == 'old' %}on{% endif %}" href="{{ url_for('main.recipes', q=q, tag=tag, sort=('' if sort == 'old' else 'old')) }}">{{ icon("clock") }} Давно не ели</a>
+  <button class="btn primary" type="button" data-open="dlg-new-recipe">＋ Новый рецепт</button>
+</form>
+<div class="cards">
+  {% for c in cards %}
+  <a class="card card-pad recipe-card" href="{{ url_for('main.recipe_view', recipe_id=c.recipe.id) }}">
+    <div class="line top"><span class="strong grow">{{ c.recipe.name }}</span>
+      {% if c.totals.has_data %}<span class="kcal">{{ c.totals.per_portion.kcal|num }}{% if not c.totals.complete %} ≈{% endif %} <span class="muted xs">ккал</span></span>{% endif %}</div>
+    {% if c.totals.has_data %}<div class="macros"><span>Б <b>{{ c.totals.per_portion.protein|g1 }}</b></span><span>Ж <b>{{ c.totals.per_portion.fat|g1 }}</b></span><span>У <b>{{ c.totals.per_portion.carbs|g1 }}</b></span><span class="muted">на порцию</span></div>{% endif %}
+    <div class="chips">{% for t in c.recipe.tags %}<span class="tagchip">{{ t.name }}</span>{% endfor %}</div>
+    <div class="line xs muted"><span>{{ c.recipe.portions }} порц.{% if c.recipe.prep_minutes %} · {{ c.recipe.prep_minutes }} мин{% endif %}</span><span class="spacer"></span><span>{{ c.last|since(g.today) }}</span></div>
+  </a>
+  {% else %}
+  <div class="card card-pad muted">{% if q or tag %}Ничего не найдено.{% elif show_archived %}Архив пуст.{% else %}Рецептов пока нет — начните с «Новый рецепт».{% endif %}</div>
+  {% endfor %}
+</div>
+<div class="line foot-links"><a class="muted xs" href="{{ url_for('main.recipes', archived=('' if show_archived else '1')) }}">{{ "Активные рецепты" if show_archived else "Архив" }}</a></div>
+{% endblock %}
+{% block dialogs %}
+<dialog class="modal narrow" id="dlg-new-recipe" aria-label="Новый рецепт">
+  <div class="dlg-head"><h2>Новый рецепт</h2><button class="dlg-close" data-close aria-label="Закрыть">✕</button></div>
+  <form method="post" action="{{ url_for('main.recipe_create') }}" class="stack">
+    <label class="field">Название<input class="in" name="name" required autofocus></label>
+    <label class="field">Порций<input class="in num" name="portions" value="4" inputmode="numeric"></label>
+    <button class="btn primary">Создать</button>
+  </form>
+</dialog>
+{% endblock %}

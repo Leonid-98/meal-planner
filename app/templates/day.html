@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, avatars, portions_text %}
+{% set section = "today" if d == g.today else "week" %}
+{% block title %}Меню — {{ d|dlong }}{% endblock %}
+{% block content %}
+<div class="toolbar dayhead-bar">
+  <a class="icon-btn sq" href="{{ prev_url }}" aria-label="Предыдущий день">{{ icon("left") }}</a>
+  <div class="grow center"><h1 class="h1">{{ "Сегодня" if d == g.today else d|dlong|capitalize }}</h1><div class="xs muted">{{ d|dlong if d == g.today else label }}</div></div>
+  <a class="icon-btn sq" href="{{ next_url }}" aria-label="Следующий день">{{ icon("right") }}</a>
+</div>
+<div class="daytabs">
+  {% for wd in dates %}<a class="daytab {% if wd == d %}on{% endif %}" href="{{ url_for('main.day_view', iso=wd.isoformat()) }}">{{ DAY_SHORT[loop.index0] }}<b>{{ wd.day }}</b></a>{% endfor %}
+</div>
+<div class="stack day-slots">
+  {% for s in slots %}
+    {% set items = by_cell.get((d, s), []) %}
+    {% if items %}
+      {% for e in items %}
+      <div class="slotcard">
+        <div class="lbl">{{ SLOT_LABEL[s] }}<span class="spacer"></span>{{ avatars(e, users) }}</div>
+        <a class="title" href="{{ here }}?dlg=entry&entry={{ e.id }}">{% if e.is_leftover %}{{ icon("leftover") }} {% endif %}{{ e.label }}</a>
+        {% if e.recipe %}
+          {% set t = totals_of(e.recipe) %}
+          {% if t.has_data %}<div class="macros"><span><b>{{ t.per_portion.kcal|num }}</b> ккал{% if not t.complete %} ≈{% endif %}</span><span>Б <b>{{ t.per_portion.protein|g1 }}</b></span><span>Ж <b>{{ t.per_portion.fat|g1 }}</b></span><span>У <b>{{ t.per_portion.carbs|g1 }}</b></span><span class="muted">· на порцию</span></div>{% endif %}
+          {% if e.children %}<div class="meta xs muted">{{ icon("leftover") }} на завтра → {{ SLOT_LABEL[e.children[0].slot]|lower }}</div>{% endif %}
+          {% if e.is_leftover %}<div class="meta xs muted">{{ icon("leftover") }} остатки с {{ e.parent.date|dshort }}</div>{% endif %}
+          <div class="line"><a class="btn primary grow tall" href="{{ url_for('main.recipe_view', recipe_id=e.recipe.id) }}">{{ icon("book") }} Рецепт</a><a class="btn tall" href="{{ here }}?dlg=pick&date={{ d.isoformat() }}&slot={{ s }}">Поменять</a><a class="btn tall sq" href="{{ here }}?dlg=entry&entry={{ e.id }}" aria-label="Ещё">{{ icon("more") }}</a></div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <a class="slotcard empty" href="{{ here }}?dlg=pick&date={{ d.isoformat() }}&slot={{ s }}"><span class="lbl grow">{{ SLOT_LABEL[s] }}</span>{{ icon("plus") }}</a>
+    {% endif %}
+  {% endfor %}
+  <div class="line"><a class="btn grow tall" href="{{ url_for('main.shopping', period='tomorrow') }}">{{ icon("cart") }} Покупки на завтра</a><a class="btn grow tall" href="{{ url_for('main.week_view', year=dates[0].isocalendar()[0], week=dates[0].isocalendar()[1]) }}?dlg=fill">{{ icon("shuffle") }} Заполнить</a></div>
+</div>
+{% endblock %}
+{% block dialogs %}{% include "_plan_dialogs.html" %}{% endblock %}

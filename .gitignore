@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+instance/
+data/
+data-local/
+design/menu-food-planner.html

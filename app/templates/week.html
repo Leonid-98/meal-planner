@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, chip %}
+{% set section = "week" %}
+{% block title %}Меню — {{ label }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <nav class="weeknav" aria-label="Недели">
+    <a class="adjacent" href="{{ prev.url }}">← {{ prev.name }}</a>
+    <span class="current">{{ label }}</span>
+    <a class="adjacent" href="{{ next.url }}">{{ next.name }} →</a>
+  </nav>
+  <span class="spacer"></span>
+  <a class="btn" href="{{ here }}?dlg=fill">{{ icon("shuffle") }} Заполнить неделю</a>
+  <a class="btn primary" href="{{ url_for('main.shopping', period='custom', **{'from': dates[0].isoformat(), 'to': dates[-1].isoformat()}) }}">{{ icon("cart") }} Список покупок</a>
+</div>
+{% set show_macros = setting("show_macros") == "1" %}
+<section class="card">
+  <div class="week" style="--slots: {{ slots|length }}">
+    <div class="day labels"><div class="dayhead corner"></div>{% for s in slots %}<div class="slotlabel">{{ SLOT_LABEL[s] }}</div>{% endfor %}</div>
+    {% for d in dates %}
+    <div class="day {% if d == g.today %}today{% endif %}">
+      <div class="dayhead"><a href="{{ url_for('main.day_view', iso=d.isoformat()) }}">{{ DAY_SHORT[loop.index0] }} <span class="d">{{ d.day }}{% if d == g.today %} · сегодня{% endif %}</span></a></div>
+      {% for s in slots %}
+      <div class="cell">
+        <span class="slot-name">{{ SLOT_LABEL[s] }}</span>
+        {% for e in by_cell.get((d, s), []) %}
+          {{ chip(e, users, here, kcal=(kcal_of(e) if e.recipe else None)) }}
+        {% endfor %}
+        <a class="add" href="{{ here }}?dlg=pick&date={{ d.isoformat() }}&slot={{ s }}" aria-label="Добавить">{{ icon("plus") }}</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+{% block dialogs %}{% include "_plan_dialogs.html" %}{% endblock %}

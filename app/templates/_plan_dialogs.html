@@ -1,0 +1,127 @@
+{% from "_macros.html" import icon, servings_fields, stepper, avatars %}
+{% if dlg == "pick" and pick %}
+<dialog class="modal wide" id="dlg-pick" aria-label="Выбор блюда">
+  <div class="dlg-head"><h2>{{ pick.date|dlong|capitalize }} · {{ SLOT_LABEL[pick.slot] }}</h2>
+    <a class="dlg-close" href="{{ here }}" aria-label="Закрыть">✕</a></div>
+  {% set base_q = {"dlg": "pick", "date": pick.date.isoformat(), "slot": pick.slot} %}
+  <form class="pick-filters" method="get" action="{{ here }}" hx-get="{{ here }}" hx-target="#pick-list" hx-select="#pick-list" hx-swap="outerHTML" hx-trigger="submit, input changed delay:300ms">
+    {% for k, v in base_q.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <input type="hidden" name="tag" value="{{ pick.tag }}">
+    <div class="line"><input id="pick-q" class="in grow" name="q" value="{{ pick.q }}" placeholder="Найти рецепт…" autocomplete="off">
+      <a class="btn" href="{{ here }}?{{ base_q|urlencode }}&q={{ pick.q|urlencode }}&tag={{ pick.tag|urlencode }}&random=1" hx-target="#pick-list" hx-select="#pick-list" hx-swap="outerHTML">{{ icon("shuffle") }} Случайное</a></div>
+    <div class="chips">
+      <a class="tagchip filter {% if not pick.tag %}on{% endif %}" href="{{ here }}?{{ base_q|urlencode }}&q={{ pick.q|urlencode }}" hx-target="#pick-list" hx-select="#pick-list" hx-swap="outerHTML">Все</a>
+      {% for t in pick.tags %}<a class="tagchip filter {% if pick.tag == t.name %}on{% endif %}" href="{{ here }}?{{ base_q|urlencode }}&q={{ pick.q|urlencode }}&tag={{ t.name|urlencode }}" hx-target="#pick-list" hx-select="#pick-list" hx-swap="outerHTML">{{ t.name }}</a>{% endfor %}
+    </div>
+  </form>
+  <form method="post" action="{{ url_for('main.entry_create') }}" class="pick-grid">
+    <input type="hidden" name="next" value="{{ here }}">
+    <input type="hidden" name="date" value="{{ pick.date.isoformat() }}">
+    <input type="hidden" name="slot" value="{{ pick.slot }}">
+    <div class="stack sm">
+      <div id="pick-list" class="card flat list">
+        {% for c in pick.cards %}
+        <label class="row {% if pick.selected and pick.selected.id == c.recipe.id %}sel{% endif %}">
+          <input type="radio" name="recipe_id" value="{{ c.recipe.id }}" {% if pick.selected and pick.selected.id == c.recipe.id %}checked{% endif %}>
+          <span class="grow stack xs">
+            <span class="strong">{{ c.recipe.name }}</span>
+            <span class="chips">{% for t in c.recipe.tags %}<span class="tagchip">{{ t.name }}</span>{% endfor %}</span>
+          </span>
+          <span class="right stack xs">
+            <span class="kcal">{% if c.totals.has_data %}{{ c.totals.per_portion.kcal|num }}{% if not c.totals.complete %} ≈{% endif %} <span class="muted xs">ккал</span>{% endif %}</span>
+            <span class="xs muted">{{ c.last|since(g.today) }}</span>
+          </span>
+        </label>
+        {% else %}
+        <div class="row muted">Ничего не найдено{% if not pick.q and not pick.tag %} — добавьте рецепты в разделе «Рецепты»{% endif %}</div>
+        {% endfor %}
+      </div>
+      <div class="line"><input class="in grow" name="free_text" placeholder="Или свой текст: заказ, в гостях, кафе…"></div>
+    </div>
+    <div class="stack">
+      {{ servings_fields(users, dict.fromkeys(pick.eaters, "1"), pick.guests) }}
+      <label class="line"><input type="checkbox" class="cbx" name="leftover"><span class="grow">И на завтра →</span>
+        <select class="in" name="leftover_slot">{% for s in SLOTS %}<option value="{{ s }}" {% if s == 'lunch' %}selected{% endif %}>{{ SLOT_LABEL[s]|lower }}</option>{% endfor %}</select></label>
+      <div class="line grow-end"><button class="btn primary grow">Добавить</button><a class="btn" href="{{ here }}">Отмена</a></div>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+
+{% if dlg == "fill" and fill %}
+<dialog class="modal wide" id="dlg-fill" aria-label="Заполнить неделю">
+  <div class="dlg-head"><h2>Заполнить неделю</h2><span class="muted small">{{ label }}</span>
+    <a class="dlg-close" href="{{ here }}" aria-label="Закрыть">✕</a></div>
+  <div class="fill-grid">
+    <form method="get" action="{{ here }}" class="stack" id="fill-rules">
+      <input type="hidden" name="dlg" value="fill">
+      <input type="hidden" name="regen" value="1">
+      <div class="stack sm">
+        <label class="line"><input type="radio" name="only_empty" value="1" {% if fill.only_empty %}checked{% endif %}><span>Только пустые ячейки</span></label>
+        <label class="line"><input type="radio" name="only_empty" value="0" {% if not fill.only_empty %}checked{% endif %}><span>Всю неделю заново</span></label>
+      </div>
+      <div class="chips">
+        {% for s in slots %}<label class="tagchip filter {% if s in fill.fslots %}on{% endif %}"><input type="checkbox" name="fslot" value="{{ s }}" {% if s in fill.fslots %}checked{% endif %}>{{ SLOT_LABEL[s] }}</label>{% endfor %}
+      </div>
+      <div class="stack sm">
+        <label class="line"><span class="grow">Не повторять блюда, дней</span><input class="in num" name="repeat_days" value="{{ fill.repeat_days }}"></label>
+        <label class="line"><input type="checkbox" class="cbx" name="weekday" value="1" {% if fill.weekday %}checked{% endif %}><span class="grow">Ужин в будни — тег</span><span class="tagchip on">{{ setting("weekday_tag") }}</span></label>
+        <label class="line"><input type="checkbox" class="cbx" name="two_days" value="1" {% if fill.two_days %}checked{% endif %}><span class="grow">Разрешить «{{ setting("two_days_tag") }}»</span></label>
+        <input type="hidden" name="weekday" value="0" disabled>
+      </div>
+      <button class="btn">{{ icon("refresh") }} Предложить ещё раз</button>
+    </form>
+    <form method="post" action="{{ url_for('main.fill_accept') }}" class="stack">
+      <input type="hidden" name="next" value="{{ here }}">
+      {% for enc in fill.encoded %}<input type="hidden" name="p" value="{{ enc }}">{% endfor %}
+      <div class="line"><span class="badge soft">{{ fill.new_count }} новых</span></div>
+      <div class="card flat">
+        <div class="week compact" style="--slots: {{ fill.rows|length }}">
+          <div class="day labels"><div class="dayhead corner"></div>{% for s in fill.rows %}<div class="slotlabel">{{ SLOT_LABEL[s] }}</div>{% endfor %}</div>
+          {% for d in dates %}
+          <div class="day {% if d == g.today %}today{% endif %}">
+            <div class="dayhead">{{ DAY_SHORT[loop.index0] }} <span class="d">{{ d.day }}</span></div>
+            {% for s in fill.rows %}
+            <div class="cell">
+              {% set p = fill.by_key.get((d, s)) %}
+              {% if p %}
+              <div class="dish new {% if p.leftover_of %}leftover{% endif %}">
+                <span class="name">{% if p.leftover_of %}{{ icon("leftover") }}{% endif %}{{ p.recipe.name }}</span>
+                <span class="meta">{% if p.leftover_of %}<span>с {{ p.leftover_of[0]|dshort }}</span>{% else %}
+                  <a class="reroll" href="{{ here }}?dlg=fill&reroll={{ d.isoformat() }}|{{ s }}&seed={{ range(1, 999999)|random }}&{{ fill.params|urlencode }}{% for enc in fill.encoded %}&p={{ enc|urlencode }}{% endfor %}" title="Другое блюдо">{{ icon("shuffle") }}</a>{% endif %}</span>
+              </div>
+              {% else %}
+                {% for e in by_cell.get((d, s), []) %}<div class="dish dim {% if e.is_leftover %}leftover{% elif not e.recipe %}free{% endif %}"><span class="name">{{ e.label }}</span></div>{% endfor %}
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="line grow-end"><button class="btn primary" {% if not fill.proposals %}disabled{% endif %}>{{ icon("check") }} Принять</button><a class="btn" href="{{ here }}">Отмена</a></div>
+    </form>
+  </div>
+</dialog>
+{% endif %}
+
+{% if dlg == "entry" and entry %}
+<dialog class="modal narrow" id="dlg-entry" aria-label="Блюдо">
+  <div class="dlg-head"><h2>{{ entry.label }}</h2><span class="muted small">{{ entry.date|dshort }} · {{ SLOT_LABEL[entry.slot]|lower }}{% if entry.is_leftover %} · остатки{% endif %}</span>
+    <a class="dlg-close" href="{{ here }}" aria-label="Закрыть">✕</a></div>
+  <form method="post" action="{{ url_for('main.entry_servings', entry_id=entry.id) }}" class="stack">
+    <input type="hidden" name="next" value="{{ here }}">
+    {% set sv = {} %}{% for s in entry.servings %}{% set _ = sv.update({s.user_id: s.portions_tenths|tenths}) %}{% endfor %}
+    {{ servings_fields(users, sv, entry.guest_portions_tenths|tenths) }}
+    <div class="line grow-end"><button class="btn primary">Сохранить</button></div>
+  </form>
+  <div class="entry-actions">
+    {% if entry.recipe %}<a class="btn" href="{{ url_for('main.recipe_view', recipe_id=entry.recipe.id) }}">{{ icon("book") }} Рецепт</a>{% endif %}
+    {% if entry.recipe and not entry.is_leftover and not entry.children %}
+    <form method="post" action="{{ url_for('main.entry_leftover', entry_id=entry.id) }}"><input type="hidden" name="next" value="{{ here }}"><input type="hidden" name="slot" value="lunch"><button class="btn">{{ icon("leftover") }} И на завтра → обед</button></form>
+    {% endif %}
+    <form method="post" action="{{ url_for('main.entry_move', entry_id=entry.id) }}"><input type="hidden" name="next" value="{{ here }}"><button class="btn" name="dir" value="next">Перенести на завтра</button></form>
+    <form method="post" action="{{ url_for('main.entry_delete', entry_id=entry.id) }}"><input type="hidden" name="next" value="{{ here }}"><button class="btn danger">{{ icon("trash") }} Удалить</button></form>
+  </div>
+</dialog>
+{% endif %}
